@@ -38,19 +38,16 @@
         h1, h2, h3 { font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 0; }
         .mono { font-family: 'Share Tech Mono', monospace; }
 
-        /* Layout */
         #app { max-width: 1200px; margin: 0 auto; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; }
         header { 
             display: flex; justify-content: space-between; align-items: center; 
             border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px;
         }
 
-        /* Progress Dots */
         .progress { display: flex; gap: 10px; }
         .dot { width: 12px; height: 12px; border: 2px solid var(--border); border-radius: 50%; }
         .dot.active { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
 
-        /* Buttons */
         .btn {
             background: var(--accent); color: #000; border: none; padding: 10px 25px;
             font-family: 'Exo 2', sans-serif; font-weight: 900; cursor: pointer;
@@ -62,65 +59,68 @@
         .btn-cyan { background: var(--cyan); }
         .btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
 
-        /* Panels */
         .card { 
             background: var(--panel); border: 1px solid var(--border); padding: 15px; 
             position: relative; transition: 0.3s;
         }
         .card:hover { border-color: var(--accent); box-shadow: 0 0 15px rgba(240,192,64,0.1); }
         
-        /* Hexagon Avatar */
         .hex {
             width: 60px; height: 60px; background: var(--accent);
             clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
             display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold;
         }
 
-        /* Grids */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .flex-center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex-grow: 1; }
 
-        /* Forms */
         input, select {
             background: #1a1d23; border: 1px solid var(--border); color: white;
             padding: 10px; font-family: 'Share Tech Mono'; width: 100%; margin-bottom: 10px;
         }
 
-        /* Phase Specifics */
         .strat-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 5px; max-height: 400px; overflow-y: auto; }
         .strat-item { font-size: 0.8rem; padding: 5px; border: 1px solid #333; cursor: pointer; }
         .strat-item.selected { border-color: var(--cyan); background: rgba(0,200,255,0.1); }
         
         .drafted-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center;
             color: var(--red); font-weight: 900; font-size: 1.5rem; transform: rotate(-15deg);
+            border: 2px solid var(--red); z-index: 10;
         }
 
         .team-alpha { border-top: 4px solid var(--accent); }
         .team-bravo { border-top: 4px solid var(--blue); }
 
         .hidden { display: none !important; }
+        
+        .admin-bar {
+            display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
     <div id="app">
         <header>
-            <div id="admin-controls" style="margin-bottom: 20px; text-align: right;">
-                <button class="btn btn-outline" style="font-size: 10px; padding: 5px 10px;" onclick="goBackPhase()">« Previous Phase</button>
-            </div>
             <div>
                 <h1 id="room-display">HELLDIVERS 2 // DRAFT</h1>
                 <div class="mono" id="room-code-label">OFFLINE</div>
             </div>
             <div class="progress" id="progress-dots">
-                <div class="dot active"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
                 <div class="dot"></div>
                 <div class="dot"></div>
                 <div class="dot"></div>
             </div>
         </header>
+
+        <div class="admin-bar" id="admin-ui">
+            <button class="btn btn-outline" style="font-size: 10px; padding: 5px 10px;" onclick="goBackPhase()">« Previous Phase</button>
+            <button class="btn btn-outline" style="font-size: 10px; padding: 5px 10px; border-color: var(--red); color: var(--red);" onclick="resetApp()">Reset Operation</button>
+        </div>
 
         <div id="phase-join" class="flex-center">
             <h2 style="font-size: 3rem; margin-bottom: 20px;">ESTABLISH UPLINK</h2>
@@ -215,20 +215,20 @@
     <script>
         // --- FIREBASE CONFIG ---
         const firebaseConfig = {
-        apiKey: "AIzaSyCXVl_VIfuu-tdxtBurJmoNvpTqlu-XUQ0",
-        authDomain: "helldivers-draft.firebaseapp.com",
-        projectId: "helldivers-draft",
-        storageBucket: "helldivers-draft.firebasestorage.app",
-        messagingSenderId: "70043162066",
-        appId: "1:70043162066:web:aa7f4272d28310c354e40b",
-        measurementId: "G-QLBJ2F9WFR"
+            apiKey: "AIzaSyCXVl_VIfuu-tdxtBurJmoNvpTqlu-XUQ0",
+            authDomain: "helldivers-draft.firebaseapp.com",
+            projectId: "helldivers-draft",
+            storageBucket: "helldivers-draft.firebasestorage.app",
+            messagingSenderId: "70043162066",
+            appId: "1:70043162066:web:aa7f4272d28310c354e40b",
+            measurementId: "G-QLBJ2F9WFR"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
         // --- GAME DATA ---
-        const PRIMARIES = ["AR-23 Liberator", "SG-8 Punisher", "R-63 Diligence", "SMG-37 Defender", "SG-225 Breaker", "LAS-5 Scythe", "JAR-5 Dominator", "PLAS-1 Scorcher", "SG-225SP Breaker Spray & Pray", "SG-225IE Breaker Incendiary"];
-        const SECONDARIES = ["P-2 Peacemaker", "P-19 Redeemer", "P-4 Senator", "LAS-7 Dagger"];
+        const PRIMARIES = ["AR-23 Liberator", "SG-8 Punisher", "R-63 Diligence", "SMG-37 Defender", "SG-225 Breaker", "LAS-5 Scythe", "JAR-5 Dominator", "PLAS-1 Scorcher", "SG-225SP Breaker S&P", "SG-225IE Breaker Incendiary"];
+        const SECONDARIES = ["P-2 Peacemaker", "P-19 Redeemer", "P-4 Senator", "LAS-7 Dagger", "GP-31 Grenade Pistol"];
         const GRENADES = ["G-12 High Explosive", "G-6 Frag", "G-16 Impact", "G-10 Incendiary", "G-3 Smoke", "G-23 Stun"];
         const STRATAGEMS = [
             {n:"Eagle Airstrike", c:"Eagle"}, {n:"Eagle Cluster Bomb", c:"Eagle"}, {n:"Eagle 500kg Bomb", c:"Eagle"}, {n:"Eagle Napalm Strike", c:"Eagle"},
@@ -249,6 +249,7 @@
         function initSelects() {
             const fill = (id, list) => {
                 const el = document.getElementById(id);
+                if (!el) return;
                 list.forEach(item => {
                     const opt = document.createElement('option');
                     opt.value = opt.textContent = item;
@@ -260,19 +261,20 @@
             fill('sel-grenade', GRENADES);
 
             const sList = document.getElementById('strat-list');
-            STRATAGEMS.forEach(s => {
-                const div = document.createElement('div');
-                div.className = 'strat-item card';
-                div.innerHTML = `<div class="mono" style="font-size:10px; color:var(--cyan)">${s.c}</div><div>${s.n}</div>`;
-                div.onclick = () => toggleStrat(s.n, div);
-                sList.appendChild(div);
-            });
+            if (sList) {
+                sList.innerHTML = '';
+                STRATAGEMS.forEach(s => {
+                    const div = document.createElement('div');
+                    div.className = 'strat-item card';
+                    div.innerHTML = `<div class="mono" style="font-size:10px; color:var(--cyan)">${s.c}</div><div>${s.n}</div>`;
+                    div.onclick = () => toggleStrat(s.n, div);
+                    sList.appendChild(div);
+                });
+            }
         }
         initSelects();
 
-        if (roomCode) {
-            connectToRoom(roomCode);
-        }
+        if (roomCode) connectToRoom(roomCode);
 
         // --- CORE FUNCTIONS ---
         function createRoom() {
@@ -294,14 +296,16 @@
             localStorage.setItem('hd_roomCode', code);
             document.getElementById('room-code-label').textContent = `ROOM: ${code}`;
             document.getElementById('phase-join').classList.add('hidden');
-            document.getElementById('phase-lobby').classList.remove('hidden');
-
+            
             db.ref('rooms/' + code).on('value', snapshot => {
                 roomData = snapshot.val();
-                if (!roomData) {
-                    resetApp();
-                    return;
-                }
+                if (!roomData) return resetLocalOnly();
+                
+                // Expiry Check (24 Hours)
+                const roomAge = Date.now() - (roomData.createdAt || 0);
+                if (roomAge > 86400000) return resetApp();
+
+                checkLateJoiner();
                 renderPhase();
             });
         }
@@ -311,49 +315,29 @@
             if (!nameInput) return;
             myName = nameInput;
             localStorage.setItem('hd_playerName', myName);
-            db.ref(`rooms/${roomCode}/players/${myName}`).update({
-                joined: true,
-                locked: false
-            });
+            db.ref(`rooms/${roomCode}/players/${myName}`).update({ joined: true, locked: false });
         }
 
-        // 1. Allow going back if someone made a mistake
-function goBackPhase() {
-    const phases = ['lobby', 'loadout', 'vote', 'draft', 'results'];
-    const currentIdx = phases.indexOf(roomData.phase);
-    if (currentIdx > 0) {
-        updatePhase(phases[currentIdx - 1]);
-    }
-}
+        function updatePhase(p) { 
+            db.ref(`rooms/${roomCode}`).update({ phase: p }); 
+        }
 
-// 2. The "Late Joiner" Fix
-// We modify the renderPhase function to ensure latecomers 
-// get redirected to the current active phase immediately.
-function checkLateJoiner() {
-    if (!roomData || !myName) return;
+        function goBackPhase() {
+            const phases = ['lobby', 'loadout', 'vote', 'draft', 'results'];
+            const currentIdx = phases.indexOf(roomData.phase);
+            if (currentIdx > 0) updatePhase(phases[currentIdx - 1]);
+        }
 
-    // If the room is already in Loadout/Vote/Draft phase 
-    // and the player hasn't initialized their data yet:
-    if (roomData.phase !== 'lobby' && !roomData.players?.[myName]) {
-        db.ref(`rooms/${roomCode}/players/${myName}`).update({
-            joined: true,
-            locked: false,
-            loadout: { 
-                primary: PRIMARIES[0], 
-                secondary: SECONDARIES[0], 
-                grenade: GRENADES[0], 
-                strats: [] 
+        function checkLateJoiner() {
+            if (!roomData || !myName) return;
+            if (roomData.phase !== 'lobby' && !roomData.players?.[myName]) {
+                db.ref(`rooms/${roomCode}/players/${myName}`).update({
+                    joined: true, locked: false,
+                    loadout: { primary: PRIMARIES[0], secondary: SECONDARIES[0], grenade: GRENADES[0], strats: [] }
+                });
             }
-        });
-    }
-}
+        }
 
-// 3. Update the Start Draft button logic 
-// If new players join during the "Vote" phase, we need to make sure 
-// the "Start Draft" button only appears when the NEW total votes match.
-// (This is already handled by the .on('value') listener!)
-
-        // --- LOGIC ---
         function toggleStrat(name, el) {
             if (selectedStrats.includes(name)) {
                 selectedStrats = selectedStrats.filter(s => s !== name);
@@ -375,8 +359,9 @@ function checkLateJoiner() {
                     strats: selectedStrats
                 }
             });
-            document.getElementById('lock-btn').disabled = true;
-            document.getElementById('lock-btn').textContent = "LOCKED IN";
+            const btn = document.getElementById('lock-btn');
+            btn.disabled = true;
+            btn.textContent = "LOCKED IN";
         }
 
         function castVote(targetName) {
@@ -388,51 +373,33 @@ function checkLateJoiner() {
             const votes = roomData.votes || {};
             const tally = {};
             Object.values(votes).forEach(v => tally[v] = (tally[v] || 0) + 1);
-            
             const sorted = Object.keys(roomData.players).sort((a,b) => (tally[b]||0) - (tally[a]||0));
-            const caps = [sorted[0], sorted[1]];
-            
-            db.ref(`rooms/${roomCode}`).update({
-                captains: caps,
-                draftTurn: 0,
-                phase: 'draft'
-            });
+            db.ref(`rooms/${roomCode}`).update({ captains: [sorted[0], sorted[1]], draftTurn: 0, phase: 'draft' });
         }
 
         function pickPlayer(targetName) {
-            const caps = roomData.captains;
             const turn = roomData.draftTurn;
             const capIdx = getTurnOwnerIdx(turn);
-            
-            // Check if it's my turn
-            if (caps[capIdx] !== myName) return;
+            if (roomData.captains[capIdx] !== myName) return;
 
             db.ref(`rooms/${roomCode}/draftPicks/${capIdx}`).push(targetName);
-            
             const totalPlayers = Object.keys(roomData.players).length - 2;
             const currentPicks = (roomData.draftPicks ? Object.values(roomData.draftPicks).flatMap(x => Object.values(x)).length : 0) + 1;
 
-            if (currentPicks >= totalPlayers) {
-                setTimeout(() => updatePhase('results'), 1500);
-            }
-
+            if (currentPicks >= totalPlayers) setTimeout(() => updatePhase('results'), 1500);
             db.ref(`rooms/${roomCode}/draftTurn`).set(turn + 1);
         }
 
         function getTurnOwnerIdx(turn) {
-            // Snake: 0, 1, 1, 0, 0, 1, 1...
-            const pattern = [0, 1, 1, 0];
-            return pattern[turn % 4];
+            return [0, 1, 1, 0][turn % 4];
         }
 
-        // --- RENDERING ---
         function renderPhase() {
             const p = roomData.phase;
             const sections = ['phase-lobby', 'phase-loadout', 'phase-vote', 'phase-draft', 'phase-results'];
             sections.forEach(s => document.getElementById(s).classList.add('hidden'));
             document.getElementById(`phase-${p}`).classList.remove('hidden');
 
-            // Dots
             const dots = document.querySelectorAll('.dot');
             const pIdx = ['lobby', 'loadout', 'vote', 'draft', 'results'].indexOf(p);
             dots.forEach((d, i) => d.className = i <= pIdx ? 'dot active' : 'dot');
@@ -442,45 +409,31 @@ function checkLateJoiner() {
                     document.getElementById('lobby-entry').classList.add('hidden');
                     document.getElementById('lobby-list-container').classList.remove('hidden');
                     const list = document.getElementById('player-list');
-                    list.innerHTML = '';
-                    const players = Object.keys(roomData.players || {});
-                    players.forEach(name => {
-                        list.innerHTML += `<div class="card flex-center"><div class="hex">${name[0]}</div><div class="mono" style="margin-top:10px">${name}</div></div>`;
-                    });
-                    document.getElementById('start-loadouts-btn').style.display = players.length >= 2 ? 'inline-block' : 'none';
+                    list.innerHTML = Object.keys(roomData.players).map(name => `<div class="card flex-center"><div class="hex">${name[0]}</div><div class="mono" style="margin-top:10px">${name}</div></div>`).join('');
+                    document.getElementById('start-loadouts-btn').style.display = Object.keys(roomData.players).length >= 2 ? 'inline-block' : 'none';
                 }
             }
 
             if (p === 'loadout') {
                 const readyList = document.getElementById('ready-list');
-                readyList.innerHTML = '';
-                let allLocked = true;
-                Object.entries(roomData.players).forEach(([name, data]) => {
-                    const status = data.locked ? `<span style="color:var(--green)">READY</span>` : `<span style="color:#555">EQUIPPING...</span>`;
-                    readyList.innerHTML += `<div class="mono" style="margin-bottom:5px">${name}: ${status}</div>`;
-                    if (!data.locked) allLocked = false;
-                });
-                document.getElementById('all-ready-container').className = allLocked ? '' : 'hidden';
+                const players = Object.entries(roomData.players);
+                readyList.innerHTML = players.map(([name, data]) => `<div class="mono" style="margin-bottom:5px">${name}: ${data.locked ? '<span style="color:var(--green)">READY</span>' : '<span style="color:#555">EQUIPPING...</span>'}</div>`).join('');
+                document.getElementById('all-ready-container').className = players.every(p => p[1].locked) ? '' : 'hidden';
             }
 
             if (p === 'vote') {
                 const grid = document.getElementById('vote-grid');
-                grid.innerHTML = '';
                 const votes = roomData.votes || {};
-                Object.keys(roomData.players).forEach(name => {
+                const players = Object.keys(roomData.players);
+                grid.innerHTML = players.map(name => {
                     const tally = Object.values(votes).filter(v => v === name).length;
-                    const votedForMe = votes[myName] === name;
-                    grid.innerHTML += `
-                        <div class="card" onclick="castVote('${name}')" style="cursor:pointer; border-color:${votedForMe ? 'var(--accent)' : ''}">
-                            <div class="mono" style="font-size:2rem">${tally}</div>
-                            <div>${name}</div>
-                            ${name === myName ? '<div class="mono" style="font-size:10px">(CANNOT VOTE SELF)</div>' : ''}
-                        </div>
-                    `;
-                });
-                if (Object.keys(votes).length === Object.keys(roomData.players).length) {
-                    document.getElementById('start-draft-container').classList.remove('hidden');
-                }
+                    return `<div class="card" onclick="castVote('${name}')" style="cursor:pointer; border-color:${votes[myName] === name ? 'var(--accent)' : ''}">
+                                <div class="mono" style="font-size:2rem">${tally}</div>
+                                <div>${name}</div>
+                                ${name === myName ? '<div class="mono" style="font-size:10px">(CANNOT VOTE SELF)</div>' : ''}
+                            </div>`;
+                }).join('');
+                if (Object.keys(votes).length >= players.length) document.getElementById('start-draft-container').classList.remove('hidden');
             }
 
             if (p === 'draft') {
@@ -493,56 +446,50 @@ function checkLateJoiner() {
                 document.getElementById('cap1-name').textContent = `TEAM ALPHA (${roomData.captains[0]})`;
                 document.getElementById('cap2-name').textContent = `TEAM BRAVO (${roomData.captains[1]})`;
 
-                // Render Teams
                 const picks0 = roomData.draftPicks?.[0] ? Object.values(roomData.draftPicks[0]) : [];
                 const picks1 = roomData.draftPicks?.[1] ? Object.values(roomData.draftPicks[1]) : [];
                 document.getElementById('team-0-list').innerHTML = picks0.map(n => `<div class="mono">• ${n}</div>`).join('');
                 document.getElementById('team-1-list').innerHTML = picks1.map(n => `<div class="mono">• ${n}</div>`).join('');
 
-                // Render Pool
                 const pool = document.getElementById('draft-pool');
-                pool.innerHTML = '';
                 const allDrafted = [...picks0, ...picks1, ...roomData.captains];
-                Object.entries(roomData.players).forEach(([name, data]) => {
-                    if (roomData.captains.includes(name)) return;
+                pool.innerHTML = Object.entries(roomData.players).map(([name, data]) => {
+                    if (roomData.captains.includes(name)) return '';
                     const isDrafted = allDrafted.includes(name);
-                    pool.innerHTML += `
-                        <div class="card" onclick="${!isDrafted ? `pickPlayer('${name}')` : ''}" style="opacity:${isDrafted ? 0.4 : 1}">
-                            ${isDrafted ? '<div class="drafted-overlay">DRAFTED</div>' : ''}
-                            <h3 style="color:white">${name}</h3>
-                            <div class="mono" style="font-size:11px">
-                                <div>PRI: ${data.loadout.primary}</div>
-                                <div>SEC: ${data.loadout.secondary}</div>
-                                <div style="color:var(--cyan)">${data.loadout.strats.join(', ')}</div>
-                            </div>
-                        </div>
-                    `;
-                });
+                    return `<div class="card" onclick="${!isDrafted ? `pickPlayer('${name}')` : ''}" style="opacity:${isDrafted ? 0.4 : 1}">
+                                ${isDrafted ? '<div class="drafted-overlay">DRAFTED</div>' : ''}
+                                <h3 style="color:white">${name}</h3>
+                                <div class="mono" style="font-size:11px">
+                                    <div>PRI: ${data.loadout.primary}</div>
+                                    <div style="color:var(--cyan)">${data.loadout.strats.join(', ')}</div>
+                                </div>
+                            </div>`;
+                }).join('');
             }
 
             if (p === 'results') {
                 const res = document.getElementById('final-results');
-                res.innerHTML = '';
-                [0, 1].forEach(idx => {
-                    const cap = roomData.captains[idx];
-                    const picks = roomData.draftPicks?.[idx] ? Object.values(roomData.draftPicks[idx]) : [];
-                    const members = [cap, ...picks];
-                    let html = `<div class="card ${idx===0?'team-alpha':'team-bravo'}"><h3>TEAM ${idx===0?'ALPHA':'BRAVO'}</h3>`;
+                res.innerHTML = [0, 1].map(idx => {
+                    const members = [roomData.captains[idx], ...Object.values(roomData.draftPicks?.[idx] || {})];
+                    let html = `<div class="card ${idx === 0 ? 'team-alpha' : 'team-bravo'}"><h3>TEAM ${idx === 0 ? 'ALPHA' : 'BRAVO'}</h3>`;
                     members.forEach(m => {
                         const d = roomData.players[m];
                         html += `<div style="margin-top:15px; border-bottom:1px solid #222; padding-bottom:10px;">
-                            <div class="mono" style="color:var(--accent)">${m} ${m===cap?'(CAPTAIN)':''}</div>
-                            <div style="font-size:12px">${d.loadout.primary} / ${d.loadout.strats.slice(0,2).join(', ')}...</div>
-                        </div>`;
+                                    <div class="mono" style="color:var(--accent)">${m} ${m === roomData.captains[idx] ? '(CAPTAIN)' : ''}</div>
+                                    <div style="font-size:12px">${d.loadout.primary} // ${d.loadout.strats.join(', ')}</div>
+                                 </div>`;
                     });
-                    html += `</div>`;
-                    res.innerHTML += html;
-                });
+                    return html + `</div>`;
+                }).join('');
             }
         }
 
         function resetApp() {
             if (roomCode) db.ref(`rooms/${roomCode}`).remove();
+            resetLocalOnly();
+        }
+
+        function resetLocalOnly() {
             localStorage.clear();
             location.reload();
         }
@@ -550,11 +497,7 @@ function checkLateJoiner() {
         function manualCaptains() {
             const names = Object.keys(roomData.players);
             if (names.length < 2) return;
-            db.ref(`rooms/${roomCode}`).update({
-                captains: [names[0], names[1]],
-                draftTurn: 0,
-                phase: 'draft'
-            });
+            db.ref(`rooms/${roomCode}`).update({ captains: [names[0], names[1]], draftTurn: 0, phase: 'draft' });
         }
     </script>
 </body>
