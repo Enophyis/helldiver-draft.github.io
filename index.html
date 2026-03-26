@@ -107,6 +107,9 @@
 
     <div id="app">
         <header>
+            <div id="admin-controls" style="margin-bottom: 20px; text-align: right;">
+                <button class="btn btn-outline" style="font-size: 10px; padding: 5px 10px;" onclick="goBackPhase()">« Previous Phase</button>
+            </div>
             <div>
                 <h1 id="room-display">HELLDIVERS 2 // DRAFT</h1>
                 <div class="mono" id="room-code-label">OFFLINE</div>
@@ -314,9 +317,41 @@
             });
         }
 
-        function updatePhase(p) {
-            db.ref(`rooms/${roomCode}`).update({ phase: p });
-        }
+        // 1. Allow going back if someone made a mistake
+function goBackPhase() {
+    const phases = ['lobby', 'loadout', 'vote', 'draft', 'results'];
+    const currentIdx = phases.indexOf(roomData.phase);
+    if (currentIdx > 0) {
+        updatePhase(phases[currentIdx - 1]);
+    }
+}
+
+// 2. The "Late Joiner" Fix
+// We modify the renderPhase function to ensure latecomers 
+// get redirected to the current active phase immediately.
+function checkLateJoiner() {
+    if (!roomData || !myName) return;
+
+    // If the room is already in Loadout/Vote/Draft phase 
+    // and the player hasn't initialized their data yet:
+    if (roomData.phase !== 'lobby' && !roomData.players?.[myName]) {
+        db.ref(`rooms/${roomCode}/players/${myName}`).update({
+            joined: true,
+            locked: false,
+            loadout: { 
+                primary: PRIMARIES[0], 
+                secondary: SECONDARIES[0], 
+                grenade: GRENADES[0], 
+                strats: [] 
+            }
+        });
+    }
+}
+
+// 3. Update the Start Draft button logic 
+// If new players join during the "Vote" phase, we need to make sure 
+// the "Start Draft" button only appears when the NEW total votes match.
+// (This is already handled by the .on('value') listener!)
 
         // --- LOGIC ---
         function toggleStrat(name, el) {
